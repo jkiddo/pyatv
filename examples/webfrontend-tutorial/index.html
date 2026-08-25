@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090a0e" />
+    <title>Apple TV Remote</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --bg: #090a0e;
+        --panel: rgba(28, 30, 37, 0.86);
+        --panel-2: #252831;
+        --line: rgba(255, 255, 255, 0.09);
+        --muted: #9297a5;
+        --text: #f8f9fb;
+        --accent: #72a7ff;
+        --good: #62d499;
+        --danger: #ff6b76;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 50% -10%, rgba(70, 96, 153, 0.28), transparent 36rem),
+          var(--bg);
+        color: var(--text);
+      }
+
+      button, select { font: inherit; }
+
+      .shell {
+        width: min(100%, 470px);
+        margin: 0 auto;
+        padding: 22px 18px 42px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.15rem;
+        letter-spacing: -0.02em;
+      }
+
+      .connection {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #555a66;
+        box-shadow: 0 0 0 4px rgba(255,255,255,.04);
+      }
+
+      .dot.connected { background: var(--good); box-shadow: 0 0 0 4px rgba(98,212,153,.12); }
+
+      .device-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      select, .secondary {
+        min-height: 46px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: var(--panel);
+        color: var(--text);
+      }
+
+      select { width: 100%; padding: 0 13px; }
+
+      .secondary { padding: 0 15px; cursor: pointer; }
+
+      .now-playing {
+        min-height: 116px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: linear-gradient(145deg, rgba(52,56,69,.9), rgba(23,25,31,.94));
+        padding: 19px;
+        margin-bottom: 14px;
+        display: grid;
+        grid-template-columns: 62px minmax(0, 1fr);
+        gap: 15px;
+        align-items: center;
+        box-shadow: 0 18px 50px rgba(0,0,0,.22);
+      }
+
+      .art {
+        width: 62px;
+        height: 62px;
+        display: grid;
+        place-items: center;
+        border-radius: 15px;
+        background: linear-gradient(145deg, #4e75ad, #7d5bad);
+        font-size: 1.55rem;
+      }
+
+      .eyebrow {
+        color: var(--accent);
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+
+      .title {
+        margin: 5px 0 3px;
+        font-size: 1rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: .82rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .progress { height: 3px; margin-top: 12px; background: rgba(255,255,255,.1); border-radius: 3px; overflow: hidden; }
+      .progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+
+      .remote {
+        padding: 17px;
+        border: 1px solid var(--line);
+        border-radius: 32px;
+        background: var(--panel);
+        box-shadow: 0 25px 70px rgba(0,0,0,.34);
+        backdrop-filter: blur(22px);
+      }
+
+      .top-actions, .playback, .volume {
+        display: grid;
+        gap: 10px;
+      }
+
+      .top-actions { grid-template-columns: 1fr 1fr; margin-bottom: 12px; }
+      .playback { grid-template-columns: repeat(3, 1fr); margin-top: 12px; }
+      .volume { grid-template-columns: 1fr 1fr; margin-top: 10px; }
+
+      .button {
+        border: 1px solid var(--line);
+        color: var(--text);
+        background: var(--panel-2);
+        cursor: pointer;
+        min-height: 52px;
+        border-radius: 16px;
+        font-size: 1.05rem;
+        transition: transform .08s ease, background .12s ease, opacity .12s ease;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .button:hover { background: #30343e; }
+      .button:active { transform: scale(.96); }
+      .button:disabled { cursor: not-allowed; opacity: .35; }
+      .button.danger { color: var(--danger); }
+      .button span { display: block; color: var(--muted); font-size: .68rem; margin-top: 3px; }
+
+      .dpad {
+        position: relative;
+        aspect-ratio: 1;
+        max-width: 308px;
+        margin: 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: radial-gradient(circle, #313540 0 24%, #22252d 25% 100%);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,.08), inset 0 -12px 30px rgba(0,0,0,.16);
+      }
+
+      .dpad .button {
+        position: absolute;
+        border: 0;
+        background: transparent;
+        border-radius: 50%;
+      }
+
+      .dpad .button:hover { background: rgba(255,255,255,.055); }
+      .up, .down { width: 42%; height: 30%; left: 29%; }
+      .left, .right { height: 42%; width: 30%; top: 29%; }
+      .up { top: 0; } .down { bottom: 0; }
+      .left { left: 0; } .right { right: 0; }
+      .select { width: 42%; height: 42%; top: 29%; left: 29%; font-size: .78rem; font-weight: 700; letter-spacing: .06em; }
+
+      .hint {
+        margin: 16px 8px 0;
+        color: var(--muted);
+        text-align: center;
+        font-size: .75rem;
+        line-height: 1.5;
+      }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        width: min(calc(100% - 36px), 420px);
+        transform: translate(-50%, 130%);
+        padding: 13px 15px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: #2a2d35;
+        box-shadow: 0 12px 35px rgba(0,0,0,.45);
+        font-size: .82rem;
+        transition: transform .22s ease;
+        z-index: 10;
+      }
+
+      .toast.show { transform: translate(-50%, 0); }
+      .toast.error { border-color: rgba(255,107,118,.45); }
+
+      @media (max-width: 360px) {
+        .shell { padding-inline: 12px; }
+        .remote { padding: 13px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <h1>Apple TV Remote</h1>
+        <div class="connection"><span class="dot" id="dot"></span><span id="connectionText">Not connected</span></div>
+      </header>
+
+      <div class="device-row">
+        <select id="deviceSelect" aria-label="Apple TV">
+          <option value="">Scanning for devices…</option>
+        </select>
+        <button class="secondary" id="connectButton">Connect</button>
+      </div>
+
+      <section class="now-playing" aria-live="polite">
+        <div class="art">▶</div>
+        <div>
+          <div class="eyebrow" id="mediaState">Ready</div>
+          <div class="title" id="mediaTitle">Choose your Apple TV</div>
+          <div class="subtitle" id="mediaSubtitle">Scan, connect, and start controlling</div>
+          <div class="progress"><span id="progress"></span></div>
+        </div>
+      </section>
+
+      <section class="remote" aria-label="Remote control">
+        <div class="top-actions">
+          <button class="button command danger" data-command="turn_off" aria-label="Power off">⏻<span>Power</span></button>
+          <button class="button command" data-command="home" aria-label="Home">⌂<span>Home</span></button>
+        </div>
+
+        <div class="dpad" aria-label="Navigation pad">
+          <button class="button command up" data-command="up" aria-label="Up">▲</button>
+          <button class="button command left" data-command="left" aria-label="Left">◀</button>
+          <button class="button command select" data-command="select" aria-label="Select">SELECT</button>
+          <button class="button command right" data-command="right" aria-label="Right">▶</button>
+          <button class="button command down" data-command="down" aria-label="Down">▼</button>
+        </div>
+
+        <div class="playback">
+          <button class="button command" data-command="previous" aria-label="Previous">◀│</button>
+          <button class="button command" data-command="play_pause" aria-label="Play or pause">▶︎ / Ⅱ</button>
+          <button class="button command" data-command="next" aria-label="Next">│▶</button>
+        </div>
+
+        <div class="volume">
+          <button class="button command" data-command="menu" aria-label="Back">‹<span>Back</span></button>
+          <button class="button command" data-command="volume_down" aria-label="Volume down">−<span>Volume</span></button>
+          <button class="button command" data-command="volume_up" aria-label="Volume up">＋<span>Volume</span></button>
+          <button class="button command" data-command="turn_on" aria-label="Power on">⏻<span>Wake</span></button>
+        </div>
+      </section>
+
+      <p class="hint">Keyboard: arrows navigate · Enter selects · Space plays/pauses · Esc goes back<br />If connection fails, run <code>atvremote wizard</code> once.</p>
+    </main>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    <script>
+      const state = { deviceId: "", connected: false, socket: null, toastTimer: null };
+      const select = document.querySelector("#deviceSelect");
+      const connectButton = document.querySelector("#connectButton");
+      const commandButtons = [...document.querySelectorAll(".command")];
+
+      function toast(message, error = false) {
+        const element = document.querySelector("#toast");
+        element.textContent = message;
+        element.className = `toast show${error ? " error" : ""}`;
+        clearTimeout(state.toastTimer);
+        state.toastTimer = setTimeout(() => element.className = "toast", 3500);
+      }
+
+      function setConnected(connected) {
+        state.connected = connected;
+        document.querySelector("#dot").classList.toggle("connected", connected);
+        document.querySelector("#connectionText").textContent = connected ? "Connected" : "Not connected";
+        connectButton.textContent = connected ? "Disconnect" : "Connect";
+        commandButtons.forEach(button => button.disabled = !connected);
+      }
+
+      async function request(url, options = {}) {
+        const response = await fetch(url, options);
+        if (!response.ok) throw new Error((await response.text()) || `Request failed (${response.status})`);
+        return response.status === 204 ? null : response.json();
+      }
+
+      async function scan() {
+        select.disabled = true;
+        connectButton.disabled = true;
+        try {
+          const devices = await request("/api/devices");
+          select.replaceChildren();
+          if (devices.length) {
+            devices.forEach(device => {
+              const option = document.createElement("option");
+              option.value = device.id;
+              option.textContent = `${device.name} · ${device.model || device.address}`;
+              select.append(option);
+            });
+          } else {
+            const option = document.createElement("option");
+            option.textContent = "No Apple TVs found";
+            select.append(option);
+          }
+          state.deviceId = select.value;
+          const current = devices.find(device => device.id === state.deviceId);
+          setConnected(Boolean(current?.connected));
+          if (!devices.length) toast("No devices found. Check that both devices are on the same network.", true);
+        } catch (error) {
+          const option = document.createElement("option");
+          option.textContent = "Scan failed";
+          select.replaceChildren(option);
+          toast(error.message, true);
+        } finally {
+          select.disabled = false;
+          connectButton.disabled = !select.value;
+        }
+      }
+
+      async function toggleConnection() {
+        if (!state.deviceId) return;
+        connectButton.disabled = true;
+        try {
+          if (state.connected) {
+            await request(`/api/devices/${encodeURIComponent(state.deviceId)}/connect`, { method: "DELETE" });
+            state.socket?.close();
+            setConnected(false);
+          } else {
+            const result = await request(`/api/devices/${encodeURIComponent(state.deviceId)}/connect`, { method: "POST" });
+            setConnected(true);
+            toast(`Connected to ${result.name || "Apple TV"}`);
+            connectUpdates();
+          }
+        } catch (error) {
+          setConnected(false);
+          toast(error.message, true);
+        } finally {
+          connectButton.disabled = false;
+        }
+      }
+
+      async function sendCommand(command) {
+        if (!state.connected) return;
+        try {
+          await request(`/api/devices/${encodeURIComponent(state.deviceId)}/command/${command}`, { method: "POST" });
+        } catch (error) {
+          toast(error.message, true);
+        }
+      }
+
+      function renderPlaying(data) {
+        if (data.error) return toast(data.error, true);
+        document.querySelector("#mediaState").textContent = `${data.state || "idle"} · ${data.media_type || "media"}`;
+        document.querySelector("#mediaTitle").textContent = data.title || "Nothing playing";
+        document.querySelector("#mediaSubtitle").textContent = [data.artist, data.album].filter(Boolean).join(" · ") || "Apple TV";
+        const percent = data.position != null && data.total_time ? (data.position / data.total_time) * 100 : 0;
+        document.querySelector("#progress").style.width = `${Math.max(0, Math.min(100, percent))}%`;
+      }
+
+      function connectUpdates() {
+        state.socket?.close();
+        const scheme = location.protocol === "https:" ? "wss" : "ws";
+        state.socket = new WebSocket(`${scheme}://${location.host}/api/devices/${encodeURIComponent(state.deviceId)}/updates`);
+        state.socket.onmessage = event => renderPlaying(JSON.parse(event.data));
+        state.socket.onerror = () => toast("Live playback updates are unavailable.", true);
+      }
+
+      select.addEventListener("change", () => {
+        state.socket?.close();
+        state.deviceId = select.value;
+        setConnected(false);
+      });
+      connectButton.addEventListener("click", toggleConnection);
+      commandButtons.forEach(button => button.addEventListener("click", () => sendCommand(button.dataset.command)));
+
+      const keys = {
+        ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+        Enter: "select", Escape: "menu", " ": "play_pause"
+      };
+      window.addEventListener("keydown", event => {
+        if (!state.connected || !keys[event.key] || event.repeat) return;
+        event.preventDefault();
+        sendCommand(keys[event.key]);
+      });
+
+      setConnected(false);
+      scan();
+    </script>
+  </body>
+</html>
